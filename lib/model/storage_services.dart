@@ -11,18 +11,35 @@ class Storage {
   final firebase_storage.FirebaseStorage storage =
       firebase_storage.FirebaseStorage.instance;
 
-  Future<void> uploadFile(String filePath, String fileName)async{
+  Future<void> uploadFile(String userID,String filePath, String fileName)async{
     File file = File(filePath);
     try{
-      await storage.ref('3QzkxWRoDCMOSBHTbqJw/uploads/$fileName').putFile(file);
+      await storage.ref('$userID/uploads/$fileName').putFile(file);
     } on firebase_core.FirebaseException catch (e){
       print(e);
     }
   }
 
-  Future <ProfileModel> updateProfileData(ProfileModel profileModel) async {
+
+  Future addUserSocialsToDB(String userId, Map<String, dynamic> userSocialsMap) {
+    return FirebaseFirestore.instance
+        .collection("user")
+        .doc(userId)
+        .collection('socials')
+        .doc(userId)
+        .set(userSocialsMap);
+  }
+
+  Future addUserInfoToDB(String userId, Map<String, dynamic> userInfoMap) {
+    return FirebaseFirestore.instance
+        .collection("user")
+        .doc(userId)
+        .set(userInfoMap);
+  }
+
+  Future <ProfileModel> updateProfileData(String userID, ProfileModel profileModel) async {
     final dbClient = FirebaseFirestore.instance.collection('user')
-        .doc('3QzkxWRoDCMOSBHTbqJw');
+        .doc(userID);
 
     await dbClient.update(profileModel.toJson());
     return profileModel;
@@ -35,8 +52,8 @@ class Storage {
     return result;
   }
 
-  Stream<String> getPicStream(String imageName) {
-    return storage.ref('3QzkxWRoDCMOSBHTbqJw/uploads/$imageName').getDownloadURL().asStream();
+  Stream<String> getPicStream(String imageName, String userID) {
+    return storage.ref('$userID/uploads/$imageName').getDownloadURL().asStream();
   }
 
 

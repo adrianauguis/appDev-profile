@@ -15,6 +15,10 @@ class ProfileModel {
     required this.birthdate,
     required this.aboutMe,
     required this.section,
+    required this.fb,
+    required this.ig,
+    required this.git,
+    required this.twtr
   });
 
   int? id;
@@ -22,6 +26,10 @@ class ProfileModel {
   DateTime? birthdate;
   String? aboutMe;
   String? section;
+  String? fb;
+  String? ig;
+  String? git;
+  String? twtr;
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) => ProfileModel(
     id: json["id"],
@@ -29,6 +37,10 @@ class ProfileModel {
     birthdate: json["birthdate"],
     aboutMe: json["aboutMe"],
     section: json["section"],
+    fb: json["fb"],
+    ig: json["ig"],
+    git: json["git"],
+    twtr: json["twtr"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -37,5 +49,9 @@ class ProfileModel {
     "birthdate": birthdate,
     "aboutMe": aboutMe,
     "section": section,
+    "fb": fb,
+    "ig": ig,
+    "git": git,
+    "twtr": twtr,
   };
 }

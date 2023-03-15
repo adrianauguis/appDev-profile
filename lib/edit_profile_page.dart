@@ -5,9 +5,9 @@ import 'package:auguis_profile/model/profile_model.dart';
 import 'package:auguis_profile/model/storage_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 
 class EditProfile extends StatefulWidget {
   DocumentSnapshot documentSnapshot;
@@ -22,9 +22,10 @@ class _EditProfileState extends State<EditProfile> {
   Storage storage = Storage();
   final CollectionReference profile =
       FirebaseFirestore.instance.collection('user');
-  final formKey = GlobalKey<FormState>();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final double coverHeight = 230;
   final double profileHeight = 144;
+  final formKey = GlobalKey<FormState>();
 
   Future _selectDate(DateTime date) async {
     final DateTime? picked = await showDatePicker(
@@ -32,19 +33,19 @@ class _EditProfileState extends State<EditProfile> {
         initialDate: date,
         firstDate: DateTime(1990),
         lastDate: DateTime(2025));
-    if (picked != null) {
-      final TimeOfDay? time =
-      await showTimePicker(context: context, initialTime: TimeOfDay.now());
-      if (time != null) {
-        return DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          time.hour,
-          time.minute,
-        );
-      }
-    }
+    // if (picked != null) {
+    //   final TimeOfDay? time =
+    //   await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    //   if (time != null) {
+    //     return DateTime(
+    //       picked.year,
+    //       picked.month,
+    //       picked.day,
+    //       time.hour,
+    //       time.minute,
+    //     );
+    //   }
+    // }
     return picked;
   }
 
@@ -62,12 +63,13 @@ class _EditProfileState extends State<EditProfile> {
 
   Widget buildProfileImage() {
     return StreamBuilder(
-        stream: storage.getPicStream("profile"),
-        builder: (context, AsyncSnapshot<String> snapshot){
+        stream: storage.getPicStream("profile", _firebaseAuth.currentUser!.uid),
+        builder: (context, AsyncSnapshot<String> snapshot) {
           return CircleAvatar(
             radius: profileHeight / 2,
             backgroundColor: Colors.grey,
-            backgroundImage: NetworkImage(snapshot.data??"https://blogtimenow.com/wp-content/uploads/2014/06/hide-facebook-profile-picture-notification.jpg"),
+            backgroundImage: NetworkImage(snapshot.data ??
+                "https://blogtimenow.com/wp-content/uploads/2014/06/hide-facebook-profile-picture-notification.jpg"),
           );
         });
   }
@@ -88,7 +90,7 @@ class _EditProfileState extends State<EditProfile> {
             top: 245,
             right: 85,
             child: RawMaterialButton(
-              onPressed: () async{
+              onPressed: () async {
                 final result = await FilePicker.platform.pickFiles(
                     allowMultiple: false,
                     type: FileType.custom,
@@ -96,13 +98,13 @@ class _EditProfileState extends State<EditProfile> {
 
                 if (result == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("No Image Selected")));
+                      const SnackBar(content: Text("No Image Selected")));
                   return;
                 }
                 final filePath = result.files.single.path!;
                 const fileName = "profile";
-                storage.uploadFile(filePath, fileName);
+                storage.uploadFile(
+                    _firebaseAuth.currentUser!.uid, filePath, fileName);
               },
               elevation: 2.0,
               fillColor: const Color(0xFF698269),
@@ -123,6 +125,10 @@ class _EditProfileState extends State<EditProfile> {
     TextEditingController section = TextEditingController();
     TextEditingController birthdate = TextEditingController();
     TextEditingController aboutMe = TextEditingController();
+    TextEditingController fb = TextEditingController();
+    TextEditingController git = TextEditingController();
+    TextEditingController ig = TextEditingController();
+    TextEditingController twtr = TextEditingController();
 
     name.text = widget.documentSnapshot['name'];
     id.text = widget.documentSnapshot['id'].toString();
@@ -133,8 +139,7 @@ class _EditProfileState extends State<EditProfile> {
     String formattedDate = DateFormat.yMMMEd().format(date);
     birthdate.text = formattedDate;
     aboutMe.text = widget.documentSnapshot['aboutMe'];
-    return Form(
-        child: Padding(
+    return Form(child: Padding(
       key: formKey,
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
       child: Column(
@@ -146,6 +151,12 @@ class _EditProfileState extends State<EditProfile> {
                 border: OutlineInputBorder(),
                 labelText: "Name",
                 suffixIcon: Icon(Icons.person)),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           TextFormField(
@@ -155,6 +166,12 @@ class _EditProfileState extends State<EditProfile> {
                 border: OutlineInputBorder(),
                 labelText: "ID",
                 suffixIcon: Icon(Icons.person)),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           TextFormField(
@@ -164,6 +181,72 @@ class _EditProfileState extends State<EditProfile> {
                 border: OutlineInputBorder(),
                 labelText: "Section",
                 suffixIcon: Icon(Icons.meeting_room)),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: fb,
+            keyboardType: TextInputType.text,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Facebook username",
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: git,
+            keyboardType: TextInputType.text,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Github username",
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: ig,
+            keyboardType: TextInputType.text,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Instagram username",
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: twtr,
+            keyboardType: TextInputType.text,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: "Twitter username",
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           TextFormField(
@@ -174,18 +257,17 @@ class _EditProfileState extends State<EditProfile> {
               labelText: 'Birthdate',
               prefixIcon: InkWell(
                 child: const Icon(Icons.calendar_today),
-                onTap: ()async{
+                onTap: () async {
                   DateTime d = DateTime.now();
                   addDate = await _selectDate(d);
-                  String formattedDate = DateFormat('E, d MMM yyyy, h:mm a').format(addDate!);
+                  String formattedDate =
+                      DateFormat('E, d MMM yyyy').format(addDate!);
                   birthdate.text = formattedDate;
                 },
               ),
             ),
             validator: (value) {
-              return (value == '')
-                  ? 'Please enter a date and time'
-                  : null;
+              return (value == '') ? 'Please enter a date and time' : null;
             },
           ),
           const SizedBox(height: 10),
@@ -201,17 +283,36 @@ class _EditProfileState extends State<EditProfile> {
               contentPadding:
                   EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Pleas Enter url";
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () async {
-              await storage.updateProfileData(ProfileModel(
-                  id: int.parse(id.text),
-                  name: name.text,
-                  birthdate: addDate ?? date,
-                  aboutMe: aboutMe.text,
-                  section: section.text));
-              Navigator.push(context, MaterialPageRoute(builder: (context)=> const HomePage()));
+              String FB = widget.documentSnapshot['fb']+fb.text;
+              String IG = widget.documentSnapshot['ig']+ig.text;
+              String GIT = widget.documentSnapshot['git']+git.text;
+              String TWTR = widget.documentSnapshot['twtr']+twtr.text;
+
+              await storage.updateProfileData(
+                  widget.documentSnapshot.id.toString(),
+                  ProfileModel(
+                      id: int.parse(id.text),
+                      name: name.text,
+                      birthdate: addDate ?? date,
+                      aboutMe: aboutMe.text,
+                      section: section.text,
+                      fb: FB,
+                      git: GIT,
+                      ig: IG,
+                      twtr: TWTR
+                  ));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const HomePage()));
             },
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF698269)),
@@ -226,19 +327,18 @@ class _EditProfileState extends State<EditProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFB99B6B),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF698269),
-        title: const Text("Edit Profile",
-            style: TextStyle(color: Color(0xFF03001C))),
-      ),
-      body: RefreshIndicator(
-          child: ListView(
-              padding: EdgeInsets.zero,
-              children: [buildTopPart(), buildFormPart()]),
-          onRefresh: ()async{
-            return Future.delayed(const Duration(seconds: 0));
-          })
-    );
+        backgroundColor: const Color(0xFFB99B6B),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF698269),
+          title: const Text("Edit Profile",
+              style: TextStyle(color: Color(0xFF03001C))),
+        ),
+        body: RefreshIndicator(
+            child: ListView(
+                padding: EdgeInsets.zero,
+                children: [buildTopPart(), buildFormPart()]),
+            onRefresh: () async {
+              return Future.delayed(const Duration(seconds: 0));
+            }));
   }
 }
